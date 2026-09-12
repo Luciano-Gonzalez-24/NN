@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <omp.h>
 #include "estructuras.h"
+#include "entrenamiento.h"
 
 
 int main(){

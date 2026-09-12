@@ -1,5 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "estructuras.h"
-
+#include "entrenamiento.h"
 
 float Relu(float input){
 	return (input > 0)*input;
