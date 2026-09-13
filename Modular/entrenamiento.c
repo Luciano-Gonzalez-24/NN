@@ -114,9 +114,9 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
       }
     }
     printf("En la epoca %d, el loss es: %lf \n", ep, loss_avg);
-    if (loss_avg <= 0.00002)
-      return 0;
-  }
+    //   if (loss_avg <= 0.00002)
+    //     return 0;
+    // }
 
-  return 0;
-}
+    return 0;
+  }
