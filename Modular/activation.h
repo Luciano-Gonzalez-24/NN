@@ -1,6 +1,5 @@
 #ifndef ACTIVATION
 #define ACTIVATION
-
 #define EULER_NUMBER 2.71828
 
 float Relu(float input);
