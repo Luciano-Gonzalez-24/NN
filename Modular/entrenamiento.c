@@ -54,23 +54,26 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
       }
 
       // BACKWARD
+      // #pragma omp parallel for num_threads(16) reduction(+ : loss_avg)
       for (int i = 0; i < final_size; i++) {
-        loss[i] = 0.5 * (neuralnet->layers[num_layers - 1].output[i] - y[i]) *
-                  (neuralnet->layers[num_layers - 1].output[i] - y[i]);
-        grad[i] = (neuralnet->layers[num_layers - 1].output[i] - y[i]);
+        float diff = neuralnet->layers[num_layers - 1].output[i] - y[i];
+        loss[i] = 0.5 * (diff) * (diff);
+        grad[i] = (diff);
         loss_avg += (loss[i] / n_examples) / final_size;
-        // printf("La red da %f y la respuesta es %f loss =
-        // %f\n",neuralnet->layers[num_layers-1].output[i],y[i],loss[i]);
+        // printf("La red da %f y la respuesta es %f loss = %f\n",
+        //        neuralnet->layers[num_layers - 1].output[i], y[i], loss[i]);
       }
       for (int layer_indx = num_layers - 1; layer_indx >= 0; layer_indx--) {
         int input_size = neuralnet->layers[layer_indx].input_size;
         int output_size = neuralnet->layers[layer_indx].output_size;
+
         for (int i = 0; i < output_size; i++) {
+          // No olvidar que cuando tenga funcion de activacion
+          // tengo que hacer grad_z*d funcion activacion
           float grad_z =
               grad[i] * Relu_prime(neuralnet->layers[layer_indx].cache.z[i]);
           neuralnet->layers[layer_indx].grad_bias[i] = grad_z;
-          // No olvidar que cuando tenga funcion de activacion
-          // tengo que hacer grad_z*d funcion activacion
+
           for (int j = 0; j < input_size; j++) {
             neuralnet->layers[layer_indx].grad_weights[i * input_size + j] =
                 grad_z * neuralnet->layers[layer_indx].input[j];
@@ -82,7 +85,9 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
             float sum = 0;
             for (int i = 0; i < output_size; i++) {
               float grad_z = grad[i];
-              grad_z *= (neuralnet->layers[layer_indx].cache.z[i] > 0);
+              grad_z *= Relu_prime(neuralnet->layers[layer_indx].cache.z[i]);
+              // grad_z *= (neuralnet->layers[layer_indx].cache.z[i] > 0);
+              // optimizacion pa dps con el el codigo mjr
               sum += grad_z *
                      neuralnet->layers[layer_indx].weights[i * input_size + j];
             }
@@ -93,6 +98,7 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
       }
 
       float learning_rate = 0.01;
+
       for (int layer_indx = 0; layer_indx < num_layers; layer_indx++) {
         int input_size = neuralnet->layers[layer_indx].input_size;
         int output_size = neuralnet->layers[layer_indx].output_size;
@@ -108,6 +114,8 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
       }
     }
     printf("En la epoca %d, el loss es: %lf \n", ep, loss_avg);
+    if (loss_avg <= 0.00002)
+      return 0;
   }
 
   return 0;
