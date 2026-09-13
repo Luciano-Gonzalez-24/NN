@@ -1,5 +1,7 @@
 #ifndef ESTRUCTURAS
+
 #define ESTRUCTURAS
+
 
 typedef struct {
     int batch_size;
@@ -7,6 +9,8 @@ typedef struct {
 	float *grad;
 
 } DenseCache;
+
+
 
 typedef struct {
 	int input_size;
@@ -22,6 +26,7 @@ typedef struct {
 	int initialized;
    DenseCache cache;
 } DenseLayer;
+
 
 
 typedef struct {

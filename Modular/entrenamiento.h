@@ -1,9 +1,11 @@
 #ifndef ENTRENAMIENTO
+
 #define ENTRENAMIENTO
 
-#include "estructuras.h"
+float Relu(float input);
 
-int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
-            int n_examples);
+float Relu_prime(float input);
+
+int NN_loop(NeuralNetwork* neuralnet,int epochs,float *X,float *Y,int n_examples);
 
 #endif
