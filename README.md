@@ -4,7 +4,7 @@ Programa para la asignatura de LABORATORIO DE COMPUTACION DE ALTO RENDIMIENTO, c
 
 ## ToDo List:
 - Modularizar código. ✅
-- Comentar y ordenar el código.
-- Implementar OpenMP.
-- Crear distintas funciones de activación.
-- Distintos Pesos para las funciones de activación.
+- Comentar y ordenar el código. ❎
+- Implementar OpenMP. ✅
+- Crear distintas funciones de activación. ✅
+- Distintos Pesos para las funciones de activación. ✅ / 2
