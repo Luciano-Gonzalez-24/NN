@@ -36,7 +36,7 @@ int main() {
   
   // Aca le doy batch size en como argumento y no uso el de cada capa, 
   // para asi evitar llamados a cada cache de cada capa dado que son la misma siempre 
-  // y porque ya lo tenia asi antes :D
+  // y porque ya lo tenia asi antes
 
   // NeuralNetwork, Epochs, X_data, Y_data, Number_Of_Examples, Batch_size, Activation_Function, Derivative_Of_Activation_Function, Learning_Rate,Number_Threads
   

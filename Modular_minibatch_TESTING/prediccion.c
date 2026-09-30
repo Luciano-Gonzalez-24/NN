@@ -14,7 +14,6 @@ float* NN_prediction(NeuralNetwork* neuralnet, float* input, int print_bool, flo
 	// (en un futuro que se puedan guardar pesos y cargarlos directamente seria interesante)
 
 
-	// ARREGLAR ESTO, NO CAMBIAR LO DE LAS LAYERS,
 	// Ahora tenemos el output expandido para cada ex en el training
 	//
 	// Si ahora usamos uno cualquiera, ¿no debería pasar nada no?
