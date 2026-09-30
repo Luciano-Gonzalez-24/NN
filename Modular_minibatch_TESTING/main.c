@@ -1,6 +1,7 @@
 #include "activation.h"
 #include "entrenamiento.h"
 #include "estructuras.h"
+#include "prediccion.h"
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,13 +9,13 @@
 int main() {
   srand48(0);
   NeuralNetwork *neuralnet = (NeuralNetwork *)malloc(sizeof(NeuralNetwork));
-  NN_init(neuralnet, 4);
+  NN_init(neuralnet, 5);
   int input_size = 1;
-  int n_examples = 1024;
-  int batch_size = 256;
+  int n_examples = 1024*1024;
+  int batch_size =256;
   int out_size = 1;
-  int epochs = 1280;
-  int n_threads = 1; 
+  int epochs = 8;
+  int n_threads = 16; 
   float learning_rate = 0.01;
   float *X = (float *)malloc(input_size * n_examples * sizeof(float));
   for (int i = 0; i < n_examples; i++)
@@ -25,10 +26,11 @@ int main() {
 
     
   // NeuralNetwork, LayerIdx, Input_size, Output_size, Batch_size
-  NN_Layer_innit(neuralnet, 0, input_size, 8,batch_size); 
-  NN_Layer_innit(neuralnet, 1, 8, 8,batch_size);
-  NN_Layer_innit(neuralnet, 2, 8, 8,batch_size);
-  NN_Layer_innit(neuralnet, 3, 8, out_size,batch_size);
+  NN_Layer_innit(neuralnet, 0, input_size, 32,batch_size); 
+  NN_Layer_innit(neuralnet, 1, 32, 32,batch_size);
+  NN_Layer_innit(neuralnet, 2, 32, 32,batch_size);
+  NN_Layer_innit(neuralnet, 3, 32, 32,batch_size);
+  NN_Layer_innit(neuralnet, 4, 32, out_size,batch_size);
   NN_grad_innit(neuralnet);
   double start = omp_get_wtime();
   
@@ -37,7 +39,10 @@ int main() {
   // y porque ya lo tenia asi antes :D
 
   // NeuralNetwork, Epochs, X_data, Y_data, Number_Of_Examples, Batch_size, Activation_Function, Derivative_Of_Activation_Function, Learning_Rate,Number_Threads
+  
   NN_loop(neuralnet, epochs, X, Y, n_examples, batch_size, Relu, Relu_prime,learning_rate,n_threads); 
+  
+
   // recordar que dar las funciones como argumento nos quita la posibilidad de hacer static inline en las funciones
   // tal vez hacer una super funcion que ocupe un arguemneto tipo : 0, 1 ,2 para elegir la funcion a querer
   // es mas feo pero deberia ir mas rapido
@@ -48,5 +53,18 @@ int main() {
  // NN_print_layer(neuralnet,1);
  // NN_print_layer(neuralnet,2);
  // NN_print_layer(neuralnet,3);
+ //
+ 
+
+  float ejemplo = 0.1;
+ 
+ 
+
+ for (int i = 0; i<10; i++){
+	NN_prediction(neuralnet,&ejemplo,1,Relu);
+	ejemplo += 0.1;
+ }
+ 
+
   return 0;
 }

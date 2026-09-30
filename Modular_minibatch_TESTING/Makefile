@@ -1,4 +1,4 @@
-CFLAGS=-O3 -fopenmp -lm
+CFLAGS= -fopenmp -lm
 
 CC=gcc
 
@@ -8,13 +8,14 @@ EXEC=neural_network
 EST = estructuras
 TRAIN = entrenamiento
 ACT = activation
+PRED = prediccion
 
 all: $(EXEC)
 
-$(EXEC): main.o $(EST).o $(TRAIN).o $(ACT).o
-	$(CC) $(CFLAGS) main.o $(EST).o $(TRAIN).o $(ACT).o -o $(EXEC)
+$(EXEC): main.o $(EST).o $(TRAIN).o $(ACT).o $(PRED).o
+	$(CC) $(CFLAGS) main.o $(EST).o $(TRAIN).o $(ACT).o $(PRED).o -o $(EXEC)
 
-main.o: main.c $(EST).h $(TRAIN).h $(ACT).h
+main.o: main.c $(EST).h $(TRAIN).h $(ACT).h $(PRED).o
 	$(CC) $(CFLAGS) -c main.c
 
 $(EST).o: $(EST).c $(EST).h
@@ -23,9 +24,12 @@ $(EST).o: $(EST).c $(EST).h
 $(TRAIN).o: $(TRAIN).c $(EST).h $(TRAIN).h $(ACT).h
 	$(CC) $(CFLAGS) -c $(TRAIN).c
 
+$(PRED).o: $(PRED).c $(PRED).h $(EST).h $(ACT).h
+	$(CC) $(CFLAGS) -c $(PRED).c
+
 
 run:
 	./$(EXEC)
 
 clean:
-	$(RM) main.o $(EST).o $(TRAIN).o $(ACT).o $(EXEC)
+	$(RM) main.o $(EST).o $(TRAIN).o $(ACT).o $(PRED).o  $(EXEC)
