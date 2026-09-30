@@ -8,4 +8,7 @@ float Relu_prime(float input);
 float Sigmoid(float input);
 float Sigmoid_prime(float input);
 
+float Sigmoid_fast(float input);
+float Sigmoid_fast_prime(float input);
+
 #endif

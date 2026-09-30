@@ -1,5 +1,4 @@
-CFLAGS= -fopenmp -lm
-
+CFLAGS= -fopenmp -lm -O3
 CC=gcc
 
 RM=rm -f

@@ -36,6 +36,7 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y, int n_exam
     ////////// BATCH //////////////
     for (int batch = 0; batch < (int)(n_examples / batch_size); batch++) { // Asumiendo que batch_size divide a n_examples
 
+// Ver lo del memset, si copia bien.
 
       memset(grad_weights,0,neuralnet->total_weights*sizeof(float));
       memset(grad_bias,0,neuralnet->total_biases*sizeof(float));
