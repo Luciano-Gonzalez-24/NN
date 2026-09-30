@@ -39,6 +39,8 @@ int NN_init(NeuralNetwork* neuralnet,int num_layers);
 
 int NN_Layer_innit(NeuralNetwork* neuralnet, int layer_indx, int input_size,int output_size);
 
+int NN_Layer_innit_2(NeuralNetwork* neuralnet, int layer_indx, int input_size,int output_size);
+
 void  NN_print_layer(NeuralNetwork* neuralnet,int layer_indx);
 
 #endif
