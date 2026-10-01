@@ -64,12 +64,12 @@ int main() {
   // NN_print_layer(neuralnet,3);
   //
 
-  float ejemplo = 0.1;
+  // float ejemplo = 0.1;
 
-  for (int i = 0; i < 10; i++) {
-    NN_prediction(neuralnet, &ejemplo, 1, Relu);
-    ejemplo += 0.1;
-  }
+  // for (int i = 0; i < 10; i++) {
+  //   NN_prediction(neuralnet, &ejemplo, 1, Relu);
+  //   ejemplo += 0.1;
+  //
 
   return 0;
 }
