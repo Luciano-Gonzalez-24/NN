@@ -10,6 +10,12 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
             int n_examples, int batch_size, float (*func)(float),
             float (*func_prime)(float), float learning_rate, int n_threads) {
 
+  double t_start_total = omp_get_wtime();
+  double t_memset_total = 0.0;
+  double t_fw_total = 0.0;
+  double t_bw_total = 0.0;
+  double t_update_total = 0.0;
+
   int num_layers = neuralnet->num_layers;
   int final_size = neuralnet->layers[num_layers - 1].output_size;
   float *grad_buffer = (float *)malloc(final_size * batch_size * sizeof(float));
@@ -40,13 +46,17 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
 
       // Ver lo del memset, si copia bien.
 
+      double t0 = omp_get_wtime();
       memset(grad_weights, 0, neuralnet->total_weights * sizeof(float));
       memset(grad_bias, 0, neuralnet->total_biases * sizeof(float));
+      t_memset_total += (omp_get_wtime() - t0);
 
 #pragma omp parallel for num_threads(n_threads)                                \
-    reduction(+ : grad_weights[0 : total_w], grad_bias[0 : total_b], loss_avg) \
-    schedule(guided)
+    reduction(+ : grad_weights[0 : total_w], grad_bias[0 : total_b], loss_avg, \
+                  t_fw_total, t_bw_total) schedule(guided)
       for (int ex = 0; ex < batch_size; ex++) {
+        double t_fw_start = omp_get_wtime();
+
         float *grad = &grad_buffer[ex * final_size];
         float *x = X + (batch * batch_size + ex) * First_Layer->input_size;
         float *y = Y + (batch * batch_size + ex) * Last_Layer->output_size;
@@ -77,6 +87,9 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
             Layer->output[ex * output_size + i] = layer_output_aux;
           }
         }
+
+        double t_bw_start = omp_get_wtime();
+        t_fw_total += (t_bw_start - t_fw_start);
 
         // BACKWARD  (Recordar Reduction para loss_avg)
         for (int i = 0; i < final_size; i++) {
@@ -135,10 +148,14 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
 
         } // termina for con layer_indx
 
+        double t_bw_end = omp_get_wtime();
+        t_bw_total += (t_bw_end - t_bw_start);
+
       } // Termina el for de ejemplos
 
       // Se actualizan los pesos y biases
 
+      t0 = omp_get_wtime();
       for (int layer_indx = 0; layer_indx < num_layers; layer_indx++) {
         DenseLayer *Layer = &(neuralnet->layers[layer_indx]);
         int input_size = Layer->input_size;
@@ -158,10 +175,31 @@ int NN_loop(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
           Layer->weights[k] -= lr_over_batch * grad_weights[w_start + k];
         }
       }
+      t_update_total += (omp_get_wtime() - t0);
 
     } // Termina el for de los batches
     printf("En la epoca %d, el loss es: %lf \n", ep, loss_avg);
   } // Termina el for de las epochs
+
+  double t_total = omp_get_wtime() - t_start_total;
+
+  // Promedio estimado de tiempo paralelo (se divide el tiempo acumulado entre
+  // hilos)
+  double t_fw_wall = t_fw_total / n_threads;
+  double t_bw_wall = t_bw_total / n_threads;
+
+  printf(
+      "\n================ METRICAS DE TIEMPO (PROFILING) ================\n");
+  printf("Tiempo total de ejecucion:          %.4f s\n", t_total);
+  printf("  - Limpieza de gradientes (memset):    %.4f s (%.2f%%)\n",
+         t_memset_total, (t_memset_total / t_total) * 100.0);
+  printf("  - Forward Pass (estimado paralelo):   %.4f s (%.2f%%)\n", t_fw_wall,
+         (t_fw_wall / t_total) * 100.0);
+  printf("  - Backward Pass (estimado paralelo):  %.4f s (%.2f%%)\n", t_bw_wall,
+         (t_bw_wall / t_total) * 100.0);
+  printf("  - Actualizacion de pesos (SGD):       %.4f s (%.2f%%)\n",
+         t_update_total, (t_update_total / t_total) * 100.0);
+  printf("=================================================================\n");
 
   free(grad_buffer);
   for (int layer_indx = 0; layer_indx < num_layers; layer_indx++) {
