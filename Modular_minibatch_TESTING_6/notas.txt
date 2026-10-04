@@ -1,0 +1,5 @@
+Ver lo del memset
+Usar Papi para cuellos de botella
+Paralelizar la mult de matrices
+Cortar el entrenamiento cuando < epsilon
+Intel Intrinsic Guide
