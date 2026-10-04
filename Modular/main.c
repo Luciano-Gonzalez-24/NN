@@ -1,5 +1,6 @@
-#include "entrenamiento.h"
+
 #include "estructuras.h"
+#include "entrenamiento.h"
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
