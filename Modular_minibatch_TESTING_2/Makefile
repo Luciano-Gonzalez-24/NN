@@ -1,4 +1,4 @@
-CFLAGS= -O3 -fopenmp -lm
+CFLAGS= -Ofast -fopenmp -lm
 
 CC=gcc
 
