@@ -26,11 +26,11 @@ int main() {
   printf("Input_size :%d \nN_examples :%d \nBatch_size :%d \nout_size :%d \nEpochs :%d \nN_threads :%d \nLearning_rate :%f \n",input_size,n_examples,batch_size,out_size,epochs,n_threads,learning_rate);
 
   // NeuralNetwork, LayerIdx, Input_size, Output_size, Batch_size
-  NN_Layer_innit_he(neuralnet, 0, input_size, 1 << 6,batch_size);
-  NN_Layer_innit_he(neuralnet, 1, 1 << 6, 1 << 6,batch_size);
-  NN_Layer_innit_he(neuralnet, 2, 1 << 6, 1 << 6,batch_size);
-  NN_Layer_innit_he(neuralnet, 3, 1 << 6, 1 << 6,batch_size);
-  NN_Layer_innit_he(neuralnet, 4,1 << 6,out_size,batch_size);
+  NN_Layer_innit_xavier(neuralnet, 0, input_size, 1 << 6,batch_size);
+  NN_Layer_innit_xavier(neuralnet, 1, 1 << 6, 1 << 6,batch_size);
+  NN_Layer_innit_xavier(neuralnet, 2, 1 << 6, 1 << 6,batch_size);
+  NN_Layer_innit_xavier(neuralnet, 3, 1 << 6, 1 << 6,batch_size);
+  NN_Layer_innit_xavier(neuralnet, 4,1 << 6,out_size,batch_size);
   NN_grad_innit(neuralnet);
   double start = omp_get_wtime();
   
@@ -40,7 +40,7 @@ int main() {
 
   // NeuralNetwork, Epochs, X_data, Y_data, Number_Of_Examples, Batch_size, Learning_Rate,Number_Threads
   
-  NN_loop_relu(neuralnet, epochs, X, Y, n_examples, batch_size,learning_rate,n_threads); 
+  NN_loop_sigmoid_fast(neuralnet, epochs, X, Y, n_examples, batch_size,learning_rate,n_threads); 
   
 
   // recordar que dar las funciones como argumento nos quita la posibilidad de hacer static inline en las funciones
@@ -61,7 +61,7 @@ int main() {
  
 
  for (int i = 0; i<10; i++){
-	NN_prediction_relu(neuralnet,&ejemplo,1);
+	NN_prediction_sigmoid_fast(neuralnet,&ejemplo,1);
 	ejemplo += 0.1;
  }
  

@@ -348,9 +348,10 @@ int NN_loop_relu(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
       t_update_total += (omp_get_wtime() - t0);
 
     } // Termina el for de los batches
+	printf("\nEn la epoca %d, el loss es: %lf \n", ep, loss_avg);
+
 /*
-    printf("\nEn la epoca %d, el loss es: %lf \n", ep, loss_avg);
-    printf("==== TIEMPO FORWARD POR HILLO EPOCH %d  ====\n[%f, ",ep,t_fw_threads[0]);
+        printf("==== TIEMPO FORWARD POR HILLO EPOCH %d  ====\n[%f, ",ep,t_fw_threads[0]);
     for(int i = 1; i<n_threads-1; i++){
 	printf("%f, ",t_fw_threads[i]);
     }
@@ -809,8 +810,9 @@ int NN_loop_sigmoid_fast(NeuralNetwork *neuralnet, int epochs, float *X, float *
       t_update_total += (omp_get_wtime() - t0);
 
     } // Termina el for de los batches
-/*
     printf("\nEn la epoca %d, el loss es: %lf \n", ep, loss_avg);
+    /*
+
     printf("==== TIEMPO FORWARD POR HILLO EPOCH %d  ====\n[%f, ",ep,t_fw_threads[0]);
     for(int i = 1; i<n_threads-1; i++){
 	printf("%f, ",t_fw_threads[i]);
@@ -847,9 +849,11 @@ int NN_loop_sigmoid_fast(NeuralNetwork *neuralnet, int epochs, float *X, float *
   printf("=================================================================\n");
 
   free(grad_buffer);
+
   for (int layer_indx = 0; layer_indx < num_layers; layer_indx++) {
     free(neuralnet->layers[layer_indx].output);
   }
+
   //free(t_fw_threads);
   //free(t_bw_threads);
   free(threads_grad_weights);
