@@ -26,11 +26,11 @@ int main() {
   printf("Input_size :%d \nN_examples :%d \nBatch_size :%d \nout_size :%d \nEpochs :%d \nN_threads :%d \nLearning_rate :%f \n",input_size,n_examples,batch_size,out_size,epochs,n_threads,learning_rate);
 
   // NeuralNetwork, LayerIdx, Input_size, Output_size, Batch_size
-  NN_Layer_innit(neuralnet, 0, input_size, 1 << 6,batch_size);
-  NN_Layer_innit(neuralnet, 1, 1 << 6, 1 << 6,batch_size);
-  NN_Layer_innit(neuralnet, 2, 1 << 6, 1 << 6,batch_size);
-  NN_Layer_innit(neuralnet, 3, 1 << 6, 1 << 6,batch_size);
-  NN_Layer_innit(neuralnet, 4,1 << 6,out_size,batch_size);
+  NN_Layer_innit_he(neuralnet, 0, input_size, 1 << 6,batch_size);
+  NN_Layer_innit_he(neuralnet, 1, 1 << 6, 1 << 6,batch_size);
+  NN_Layer_innit_he(neuralnet, 2, 1 << 6, 1 << 6,batch_size);
+  NN_Layer_innit_he(neuralnet, 3, 1 << 6, 1 << 6,batch_size);
+  NN_Layer_innit_he(neuralnet, 4,1 << 6,out_size,batch_size);
   NN_grad_innit(neuralnet);
   double start = omp_get_wtime();
   

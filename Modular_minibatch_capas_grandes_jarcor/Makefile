@@ -23,7 +23,7 @@ $(EST).o: $(EST).c $(EST).h
 $(TRAIN).o: $(TRAIN).c $(EST).h $(TRAIN).h
 	$(CC) $(CFLAGS) -c $(TRAIN).c
 
-$(PRED).o: $(PRED).c $(PRED).h $(EST).h $(ACT).h
+$(PRED).o: $(PRED).c $(PRED).h $(EST).h
 	$(CC) $(CFLAGS) -c $(PRED).c
 
 

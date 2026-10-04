@@ -38,7 +38,8 @@ typedef struct {
 
 int NN_init(NeuralNetwork* neuralnet,int num_layers);
 
-int NN_Layer_innit(NeuralNetwork* neuralnet, int layer_indx, int input_size,int output_size, int batch_size);
+int NN_Layer_innit_he(NeuralNetwork* neuralnet, int layer_indx, int input_size,int output_size, int batch_size);
+int NN_Layer_innit_xavier(NeuralNetwork* neuralnet, int layer_indx, int input_size,int output_size, int batch_size);
 
 void  NN_print_layer(NeuralNetwork* neuralnet,int layer_indx);
 

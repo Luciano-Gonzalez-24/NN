@@ -26,7 +26,7 @@ int NN_init(NeuralNetwork* neuralnet,int num_layers){
 
 
 
-int NN_Layer_innit(NeuralNetwork* neuralnet, int layer_indx, int input_size,int output_size,int batch_size){
+int NN_Layer_innit_he(NeuralNetwork* neuralnet, int layer_indx, int input_size,int output_size,int batch_size){
 	if (layer_indx !=0 && input_size != neuralnet->layers[layer_indx-1].output_size){
 		printf("El tamaño del output anterior no es igual a el input de esta capa \n");
 		return -1;
@@ -65,6 +65,45 @@ int NN_Layer_innit(NeuralNetwork* neuralnet, int layer_indx, int input_size,int 
 }
 
 
+
+
+int NN_Layer_innit_xavier(NeuralNetwork* neuralnet, int layer_indx, int input_size,int output_size,int batch_size){
+	if (layer_indx !=0 && input_size != neuralnet->layers[layer_indx-1].output_size){
+		printf("El tamaño del output anterior no es igual a el input de esta capa \n");
+		return -1;
+	}
+	if (layer_indx>neuralnet->num_layers-1){
+		printf("El indice de layer  %d es mayor que la capacidad inicializada de la nn\n",layer_indx);
+	}
+	if (neuralnet->layers[layer_indx].initialized!=0){
+		printf("%d ",layer_indx);
+		printf("Esta capa ya esta inicializada compadre \n");
+		return -1;
+	}
+	DenseLayer* Layer = &(neuralnet->layers[layer_indx]);
+	Layer->input_size = input_size;
+	Layer->output_size = output_size;
+	Layer->cache.batch_size = batch_size;
+	Layer->weights = (float*)malloc(input_size*output_size*sizeof(float));
+	Layer->bias    = (float*)malloc(output_size*sizeof(float));
+	Layer->cache.grad = (float*)malloc(output_size*batch_size*sizeof(float));
+	Layer->cache.z = (float*)malloc(output_size*batch_size*sizeof(float));
+
+
+	float limit = sqrt(6.0f / (input_size + output_size));
+	for (int i = 0; i < output_size; i++){
+		for (int j = 0; j < input_size; j++){
+			Layer->weights[i*input_size+j] = (float)drand48()*2*limit - limit; //random entre (-limit,limit)
+		}
+		Layer->bias[i] = 0.0f;
+	}
+	
+
+	neuralnet->layers[layer_indx].initialized = 1;
+	return 0;
+
+
+}
 
 
 
