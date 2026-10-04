@@ -71,7 +71,7 @@ float* NN_prediction_relu(NeuralNetwork* neuralnet, float* input, int print_bool
 
 
 
-float* NN_prediction_sigmoid(NeuralNetwork* neuralnet, float* input, int print_bool){
+float* NN_prediction_sigmoid_fast(NeuralNetwork* neuralnet, float* input, int print_bool){
 
 
 	// NO SE PUEDE HACER ESTO SIN ANTES HACER EL ENTRENAMIENTO
