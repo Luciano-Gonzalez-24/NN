@@ -8,3 +8,8 @@ Programa para la asignatura de LABORATORIO DE COMPUTACION DE ALTO RENDIMIENTO, c
 - Implementar OpenMP. ✅
 - Crear distintas funciones de activación. ✅
 - Distintos Pesos para las funciones de activación. ✅ / 2
+- Agregar Papi.
+- Graficas de Ajuste.
+- Ponerle Cuda!!.
+- mish.
+
