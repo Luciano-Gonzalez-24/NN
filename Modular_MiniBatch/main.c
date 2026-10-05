@@ -14,7 +14,7 @@ int main() {
   int batch_size = 1 << 8;
   int out_size = 1;
   int epochs = 1 << 4;
-  int n_threads = 1;
+  int n_threads = 16;
   float learning_rate = 0.01;
   float *X = (float *)malloc(input_size * n_examples * sizeof(float));
   for (int i = 0; i < n_examples; i++)
@@ -54,6 +54,7 @@ int main() {
   printf("1) He Uniforme\n");
   printf("2) He Normal\n");
   printf("3) Xavier Uniforme\n");
+  printf("4) Xavier Normal\n");
   printf("Opción: ");
   scanf("%d", &weights_select);
 
@@ -75,13 +76,22 @@ int main() {
     NN_Layer_innit_normal(neuralnet, 4, 1 << 6, out_size, batch_size);
     break;
   case 3:
-    printf("-> Inicialización Xavier seleccionada.\n");
+    printf("-> Inicialización Xavier Uniforme seleccionada.\n");
     // NeuralNetwork, LayerIdx, Input_size, Output_size, Batch_size
     NN_Layer_innit_xavier(neuralnet, 0, input_size, 1 << 6, batch_size);
     NN_Layer_innit_xavier(neuralnet, 1, 1 << 6, 1 << 6, batch_size);
     NN_Layer_innit_xavier(neuralnet, 2, 1 << 6, 1 << 6, batch_size);
     NN_Layer_innit_xavier(neuralnet, 3, 1 << 6, 1 << 6, batch_size);
     NN_Layer_innit_xavier(neuralnet, 4, 1 << 6, out_size, batch_size);
+    break;
+  case 4:
+    printf("-> Inicialización Xavier Uniforme seleccionada.\n");
+    // NeuralNetwork, LayerIdx, Input_size, Output_size, Batch_size
+    NN_Layer_innit_xavier_normal(neuralnet, 0, input_size, 1 << 6, batch_size);
+    NN_Layer_innit_xavier_normal(neuralnet, 1, 1 << 6, 1 << 6, batch_size);
+    NN_Layer_innit_xavier_normal(neuralnet, 2, 1 << 6, 1 << 6, batch_size);
+    NN_Layer_innit_xavier_normal(neuralnet, 3, 1 << 6, 1 << 6, batch_size);
+    NN_Layer_innit_xavier_normal(neuralnet, 4, 1 << 6, out_size, batch_size);
     break;
   default:
     printf("-> Opción no válida. Usando Uniforme por defecto.\n");
@@ -97,14 +107,16 @@ int main() {
 
   // NeuralNetwork, Epochs, X_data, Y_data, Number_Of_Examples, Batch_size,
   // Learning_Rate,Number_Threads
-  if (function_select == 1) {
+  switch (function_select) {
+  case 1:
     NN_loop_relu(neuralnet, epochs, X, Y, n_examples, batch_size, learning_rate,
                  n_threads);
-  } else if (function_select == 2) {
+    break;
+  case 2:
     NN_loop_sigmoid_fast(neuralnet, epochs, X, Y, n_examples, batch_size,
                          learning_rate, n_threads);
+    break;
   }
-
   /* recordar que dar las funciones como argumento nos quita la posibilidad de
   hacer static inline en las funciones tal vez hacer una super funcion que
   ocupe un arguemneto tipo : 0, 1 ,2 para elegir la funcion a querer es mas

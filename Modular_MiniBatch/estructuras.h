@@ -36,6 +36,10 @@ int NN_Layer_innit_he(NeuralNetwork *neuralnet, int layer_indx, int input_size,
                       int output_size, int batch_size);
 int NN_Layer_innit_xavier(NeuralNetwork *neuralnet, int layer_indx,
                           int input_size, int output_size, int batch_size);
+
+int NN_Layer_innit_xavier_normal(NeuralNetwork *neuralnet, int layer_indx,
+                                 int input_size, int output_size,
+                                 int batch_size);
 int NN_Layer_innit_normal(NeuralNetwork *neuralnet, int layer_indx,
                           int input_size, int output_size, int batch_size);
 
