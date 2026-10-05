@@ -120,9 +120,16 @@ int main() {
 
   float ejemplo = 0.1;
 
-  for (int i = 0; i < 10; i++) {
-    NN_prediction_sigmoid_fast(neuralnet, &ejemplo, 1);
-    ejemplo += 0.1;
+  if (function_select == 1) {
+    for (int i = 0; i < 10; i++) {
+      NN_prediction_relu(neuralnet, &ejemplo, 1);
+      ejemplo += 0.1;
+    }
+  } else if (function_select == 2) {
+    for (int i = 0; i < 10; i++) {
+      NN_prediction_sigmoid_fast(neuralnet, &ejemplo, 1);
+      ejemplo += 0.1;
+    }
   }
 
   return 0;
