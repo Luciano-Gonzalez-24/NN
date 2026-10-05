@@ -280,7 +280,7 @@ int NN_loop_relu(NeuralNetwork *neuralnet, int epochs, float *X, float *Y,
       // t_update_total += (omp_get_wtime() - t0);
 
     } // Termina el for de los batches
-    printf("\nEn la epoca %d, el loss es: %lf \n", ep, loss_avg);
+    // printf("\nEn la epoca %d, el loss es: %lf \n", ep, loss_avg);
 
     /*
             printf("==== TIEMPO FORWARD POR HILLO EPOCH %d  ====\n[%f,
@@ -619,7 +619,7 @@ int NN_loop_sigmoid_fast(NeuralNetwork *neuralnet, int epochs, float *X,
       // t_update_total += (omp_get_wtime() - t0);
 
     } // Termina el for de los batches
-    printf("\nEn la epoca %d, el loss es: %lf \n", ep, loss_avg);
+    // printf("\nEn la epoca %d, el loss es: %lf \n", ep, loss_avg);
     /*
 
     printf("==== TIEMPO FORWARD POR HILLO EPOCH %d  ====\n[%f,
