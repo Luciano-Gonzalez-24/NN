@@ -14,7 +14,7 @@ int main() {
   int batch_size = 1 << 8;
   int out_size = 1;
   int epochs = 1 << 4;
-  int n_threads = 1 << 3;
+  int n_threads = 1;
   float learning_rate = 0.01;
   float *X = (float *)malloc(input_size * n_examples * sizeof(float));
   for (int i = 0; i < n_examples; i++)
@@ -91,9 +91,9 @@ int main() {
   NN_grad_innit(neuralnet);
   double start = omp_get_wtime();
 
-  // Aca le doy batch size en como argumento y no uso el de cada capa,
-  // para asi evitar llamados a cada cache de cada capa dado que son la misma
-  // siempre y porque ya lo tenia asi antes :D
+  /*Aca le doy batch size en como argumento y no uso el de cada capa,
+  para asi evitar llamados a cada cache de cada capa dado que son la misma
+  siempre y porque ya lo tenia asi antes :D*/
 
   // NeuralNetwork, Epochs, X_data, Y_data, Number_Of_Examples, Batch_size,
   // Learning_Rate,Number_Threads
@@ -105,32 +105,28 @@ int main() {
                          learning_rate, n_threads);
   }
 
-  // recordar que dar las funciones como argumento nos quita la posibilidad de
-  // hacer static inline en las funciones tal vez hacer una super funcion que
-  // ocupe un arguemneto tipo : 0, 1 ,2 para elegir la funcion a querer es mas
-  // feo pero deberia ir mas rapido nomas queda probarlo y ponerle static inline
-  // a lo otro, waaaaaa
+  /* recordar que dar las funciones como argumento nos quita la posibilidad de
+  hacer static inline en las funciones tal vez hacer una super funcion que
+  ocupe un arguemneto tipo : 0, 1 ,2 para elegir la funcion a querer es mas
+  feo pero deberia ir mas rapido nomas queda probarlo y ponerle static inline
+  a lo otro, waaaaaa*/
+
   double end = omp_get_wtime();
   printf("Esto tardo %lf\n", end - start);
-  // NN_print_layer(neuralnet,0);
-  // NN_print_layer(neuralnet,1);
-  // NN_print_layer(neuralnet,2);
-  // NN_print_layer(neuralnet,3);
-  //
 
-  float ejemplo = 0.1;
+  // float ejemplo = 0.1;
 
-  if (function_select == 1) {
-    for (int i = 0; i < 10; i++) {
-      NN_prediction_relu(neuralnet, &ejemplo, 1);
-      ejemplo += 0.1;
-    }
-  } else if (function_select == 2) {
-    for (int i = 0; i < 10; i++) {
-      NN_prediction_sigmoid_fast(neuralnet, &ejemplo, 1);
-      ejemplo += 0.1;
-    }
-  }
+  // if (function_select == 1) {
+  //   for (int i = 0; i < 10; i++) {
+  //     NN_prediction_relu(neuralnet, &ejemplo, 1);
+  //     ejemplo += 0.1;
+  //   }
+  // } else if (function_select == 2) {
+  //   for (int i = 0; i < 10; i++) {
+  //     NN_prediction_sigmoid_fast(neuralnet, &ejemplo, 1);
+  //     ejemplo += 0.1;
+  //   }
+  // }
 
   return 0;
 }
