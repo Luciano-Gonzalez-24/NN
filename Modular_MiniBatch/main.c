@@ -51,9 +51,9 @@ int main() {
 
   // Menú de Inicialización de Pesos
   printf("Elija los pesos para la red:\n");
-  printf("1) Uniforme\n");
-  printf("2) Normal\n");
-  printf("3) Xavier\n");
+  printf("1) He Uniforme\n");
+  printf("2) He Normal\n");
+  printf("3) Xavier Uniforme\n");
   printf("Opción: ");
   scanf("%d", &weights_select);
 
