@@ -13,7 +13,7 @@ int main() {
   int n_examples = 1 << 20;
   int batch_size = 1 << 8;
   int out_size = 1;
-  int epochs = 1 << 4;
+  int epochs = 1;
   int n_threads = 16;
   float learning_rate = 0.01;
   float *X = (float *)malloc(input_size * n_examples * sizeof(float));
@@ -126,19 +126,19 @@ int main() {
   double end = omp_get_wtime();
   printf("Esto tardo %lf\n", end - start);
 
-  // float ejemplo = 0.1;
+  float ejemplo = 0.01;
 
-  // if (function_select == 1) {
-  //   for (int i = 0; i < 10; i++) {
-  //     NN_prediction_relu(neuralnet, &ejemplo, 1);
-  //     ejemplo += 0.1;
-  //   }
-  // } else if (function_select == 2) {
-  //   for (int i = 0; i < 10; i++) {
-  //     NN_prediction_sigmoid_fast(neuralnet, &ejemplo, 1);
-  //     ejemplo += 0.1;
-  //   }
-  // }
+  if (function_select == 1) {
+    for (int i = 0; i < 100; i++) {
+      NN_prediction_relu(neuralnet, &ejemplo, 1);
+      ejemplo += 0.01;
+    }
+  } else if (function_select == 2) {
+    for (int i = 0; i < 10; i++) {
+      NN_prediction_sigmoid_fast(neuralnet, &ejemplo, 1);
+      ejemplo += 0.1;
+    }
+  }
 
   return 0;
 }
