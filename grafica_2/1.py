@@ -212,14 +212,14 @@ y_pos = np.arange(len(sum_plot))
 bars1 = ax1.barh(y_pos, sum_plot['mejor_t'], color=colors_bar, height=0.65)
 ax1.set_yticks(y_pos)
 ax1.set_yticklabels(sum_plot['etiqueta'], fontsize=9.5)
-ax1.set_xlabel('Mejor tiempo de ejecución [s] (menor es mejor)')
+ax1.set_xlabel('Mejor tiempo de ejecución [s]')
 ax1.set_title('Tiempo Óptimo Alcanzado')
 ax1.set_xlim(0, 31)
 for bar, (_, r) in zip(bars1, sum_plot.iterrows()):
     ax1.text(bar.get_width() + 0.4, bar.get_y() + bar.get_height()/2, f"{r['mejor_t']:.2f}s ({r['hilos_opt']}h)", va='center', fontsize=8.5, fontweight='bold')
 
 bars2 = ax2.barh(y_pos, sum_plot['speedup_max'], color=colors_bar, height=0.65)
-ax2.set_xlabel('Speedup máximo respecto a 1 hilo (mayor es mejor)')
+ax2.set_xlabel('Speedup máximo respecto a 1 hilo')
 ax2.set_title('Speedup Máximo Alcanzado')
 ax2.set_xlim(0, 25.5)
 for bar, (_, r) in zip(bars2, sum_plot.iterrows()):
