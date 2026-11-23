@@ -64,7 +64,7 @@ __device__ inline float activate(float z, int act_type) {
   }
   return z;
 }
-// IDK if this makes it go slower for the if, might be betteer differente functions.
+// IDK if this makes it go slower for the if, might be betteer different functions.
 
 __device__ inline float activate_deriv(float z, int act_type) {
   if (act_type == 1) {
