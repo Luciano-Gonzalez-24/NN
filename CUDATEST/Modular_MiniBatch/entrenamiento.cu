@@ -63,7 +63,6 @@ __device__ inline float activate_deriv(float z, int act_type) {
 }
 
 // 1. FORWARD KERNEL: Computes Z and A for one layer across the entire batch
-// Grid: (ceil(output_size / 16), ceil(batch_size / 16))
 __global__ void forward_layer_kernel(const float *__restrict__ input,
                                      const float *__restrict__ weights,
                                      const float *__restrict__ bias,
@@ -89,8 +88,7 @@ __global__ void forward_layer_kernel(const float *__restrict__ input,
   }
 }
 
-// 2. OUTPUT ERROR KERNEL: Computes delta for the last layer (MSE derivative)
-// Grid: (ceil(final_size / 16), ceil(batch_size / 16))
+// 2. OUTPUT ERROR KERNEL: Computes the difference for the last layer (MSE derivative)
 __global__ void output_delta_kernel(const float *__restrict__ output,
                                     const float *__restrict__ target,
                                     float *__restrict__ delta_out,
@@ -104,8 +102,7 @@ __global__ void output_delta_kernel(const float *__restrict__ output,
   }
 }
 
-// 3. HIDDEN DELTA KERNEL: Backpropagates delta from layer L to layer L-1
-// Grid: (ceil(prev_size / 16), ceil(batch_size / 16))
+// 3. HIDDEN DIFFERENCE KERNEL: Backpropagates the difference from layer L to layer L-1
 __global__ void backward_delta_kernel(const float *__restrict__ delta_curr,
                                       const float *__restrict__ weights_curr,
                                       const float *__restrict__ z_prev,
@@ -128,8 +125,7 @@ __global__ void backward_delta_kernel(const float *__restrict__ delta_curr,
   }
 }
 
-// 4. ACCUMULATE WEIGHT GRADIENTS: Sums (delta_i * input_j) across the batch
-// Grid: (ceil(input_size / 16), ceil(output_size / 16))
+// 4. ACCUMULATE WEIGHT GRADIENTS: Sums ((difference) * input_j) across the batch
 __global__ void grad_weights_kernel(const float *__restrict__ delta,
                                     const float *__restrict__ input,
                                     float *__restrict__ grad_w, int batch_size,
@@ -146,8 +142,7 @@ __global__ void grad_weights_kernel(const float *__restrict__ delta,
   }
 }
 
-// 5. ACCUMULATE BIAS GRADIENTS: Sums delta_i across the batch
-// Grid: (ceil(output_size / 256))
+// 5. ACCUMULATE BIAS GRADIENTS: Sums the difference across the batch
 __global__ void grad_bias_kernel(const float *__restrict__ delta,
                                  float *__restrict__ grad_b, int batch_size,
                                  int output_size) {
@@ -162,7 +157,6 @@ __global__ void grad_bias_kernel(const float *__restrict__ delta,
 }
 
 // 6. SGD UPDATE KERNEL
-// Grid: (ceil(n / 256))
 __global__ void sgd_update_kernel(float *__restrict__ params,
                                   const float *__restrict__ grads,
                                   float lr_over_batch, long long n) {
@@ -172,7 +166,9 @@ __global__ void sgd_update_kernel(float *__restrict__ params,
   }
 }
 
-// Unified internal training runner
+
+//Lo hace todo en HD
+
 static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
                                  float *Y, int n_examples, int batch_size,
                                  float learning_rate, int hidden_act_type) {

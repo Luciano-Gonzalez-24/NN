@@ -99,22 +99,22 @@ __global__ void add_bias_and_activate_kernel(float *__restrict__ z,
   }
 }
 
-// 2. OUTPUT ERROR KERNEL: Computes delta for the last layer (MSE derivative)
-__global__ void output_delta_kernel(const float *__restrict__ output,
+// 2. OUTPUT ERROR KERNEL: Computes the difference  for the last layer (MSE derivative)
+__global__ void output_difference_kernel(const float *__restrict__ output,
                                     const float *__restrict__ target,
-                                    float *__restrict__ delta_out,
+                                    float *__restrict__ difference_out,
                                     int batch_size, int final_size) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int ex = blockIdx.y * blockDim.y + threadIdx.y;
 
   if (i < final_size && ex < batch_size) {
     int idx = ex * final_size + i;
-    delta_out[idx] = output[idx] - target[idx];
+    difference_out[idx] = output[idx] - target[idx];
   }
 }
 
-// 3. BACKWARD ELEMENT-WISE KERNEL: Multiplies propagated delta by f'(z_prev)
-__global__ void apply_act_deriv_kernel(float *__restrict__ delta_prev,
+// 3. BACKWARD ELEMENT-WISE KERNEL: Multiplies propagated difference by the derivative f'(z_prev)
+__global__ void apply_act_deriv_kernel(float *__restrict__ difference_prev,
                                        const float *__restrict__ z_prev,
                                        int batch_size, int prev_size,
                                        int prev_act_type) {
@@ -123,11 +123,11 @@ __global__ void apply_act_deriv_kernel(float *__restrict__ delta_prev,
 
   if (j < prev_size && ex < batch_size) {
     int idx = ex * prev_size + j;
-    delta_prev[idx] *= activate_deriv(z_prev[idx], prev_act_type);
+    difference_prev[idx] *= activate_deriv(z_prev[idx], prev_act_type);
   }
 }
 
-// Unified internal training runner using cuBLAS
+// corre todo viste
 static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
                                  float *Y, int n_examples, int batch_size,
                                  float learning_rate, int hidden_act_type) {
@@ -164,7 +164,7 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
   float *d_X, *d_Y;
   float *d_weights, *d_bias;
   float *d_grad_w, *d_grad_b;
-  float *d_z, *d_a, *d_delta;
+  float *d_z, *d_a, *d_difference;
   float *d_ones;
 
   CUDA_CHECK(cudaMalloc(&d_X, (long long)n_examples * input_dim * sizeof(float)));
@@ -176,7 +176,7 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
   CUDA_CHECK(cudaMalloc(&d_grad_b, total_b * sizeof(float)));
   CUDA_CHECK(cudaMalloc(&d_z, total_batch_activations * sizeof(float)));
   CUDA_CHECK(cudaMalloc(&d_a, total_batch_activations * sizeof(float)));
-  CUDA_CHECK(cudaMalloc(&d_delta, total_batch_activations * sizeof(float)));
+  CUDA_CHECK(cudaMalloc(&d_difference, total_batch_activations * sizeof(float)));
   CUDA_CHECK(cudaMalloc(&d_ones, batch_size * sizeof(float)));
 
   int block1D = 256;
@@ -261,11 +261,11 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
 
       // --- BACKWARD PASS ---
       NVTX_PUSH("Backward");
-      // 1. Last layer delta (output - target)
+      // 1. Last layer difference (output - target)
       int last = num_layers - 1;
       dim3 grid_out((output_dim + 15) / 16, (batch_size + 15) / 16);
-      output_delta_kernel<<<grid_out, block2D>>>(
-          d_a + act_offsets[last], batch_Y, d_delta + act_offsets[last],
+      output_difference_kernel<<<grid_out, block2D>>>(
+          d_a + act_offsets[last], batch_Y, d_difference + act_offsets[last],
           batch_size, output_dim);
 
       // 2. Propagate gradients backward through all layers
@@ -274,46 +274,46 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
         int out_sz = neuralnet->layers[l].output_size;
         const float *in_ptr = (l == 0) ? batch_X : (d_a + act_offsets[l - 1]);
         const float *w_ptr = d_weights + neuralnet->weights_starter_point[l];
-        float *delta_curr = d_delta + act_offsets[l];
+        float *difference_curr = d_difference + act_offsets[l];
         float *grad_w_ptr = d_grad_w + neuralnet->weights_starter_point[l];
         float *grad_b_ptr = d_grad_b + neuralnet->bias_starter_point[l];
 
-        // dW = delta^T * X  (in col-major: dW_col[in_sz x out_sz] = X_col[in_sz x B] * delta_col^T[B x out_sz])
+        // dW = difference^T * X  (in col-major: dW_col[in_sz x out_sz] = X_col[in_sz x B] * difference_col^T[B x out_sz])
         CUBLAS_CHECK(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T,
                                  in_sz, out_sz, batch_size,
                                  &alpha,
                                  in_ptr, in_sz,
-                                 delta_curr, out_sz,
+                                 difference_curr, out_sz,
                                  &beta,
                                  grad_w_ptr, in_sz));
 
-        // db = delta^T * 1_B  (in col-major: db[out_sz] = delta_col[out_sz x B] * ones[B])
+        // db = difference^T * 1_B  (in col-major: db[out_sz] = difference_col[out_sz x B] * ones[B])
         CUBLAS_CHECK(cublasSgemv(handle, CUBLAS_OP_N,
                                  out_sz, batch_size,
                                  &alpha,
-                                 delta_curr, out_sz,
+                                 difference_curr, out_sz,
                                  d_ones, 1,
                                  &beta,
                                  grad_b_ptr, 1));
 
-        // delta_prev = (delta_curr * W) * f'(z_prev)
+        // difference_prev = (difference_curr * W) * f'(z_prev)
         if (l > 0) {
-          float *delta_prev = d_delta + act_offsets[l - 1];
+          float *difference_prev = d_difference + act_offsets[l - 1];
           const float *z_prev = d_z + act_offsets[l - 1];
 
-          // Linear step: delta_prev_col[in_sz x B] = W_col[in_sz x out_sz] * delta_curr_col[out_sz x B]
+          // Linear step: difference_prev_col[in_sz x B] = W_col[in_sz x out_sz] * difference_curr_col[out_sz x B]
           CUBLAS_CHECK(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N,
                                    in_sz, batch_size, out_sz,
                                    &alpha,
                                    w_ptr, in_sz,
-                                   delta_curr, out_sz,
+                                   difference_curr, out_sz,
                                    &beta,
-                                   delta_prev, in_sz));
+                                   difference_prev, in_sz));
 
           // Element-wise activation derivative
           dim3 grid_prev((in_sz + 15) / 16, (batch_size + 15) / 16);
           apply_act_deriv_kernel<<<grid_prev, block2D>>>(
-              delta_prev, z_prev, batch_size, in_sz, hidden_act_type);
+              difference_prev, z_prev, batch_size, in_sz, hidden_act_type);
         }
       }
       NVTX_POP(); // Backward
@@ -367,7 +367,7 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
   cudaFree(d_grad_b);
   cudaFree(d_z);
   cudaFree(d_a);
-  cudaFree(d_delta);
+  cudaFree(d_difference);
   cudaFree(d_ones);
   free(act_offsets);
 
