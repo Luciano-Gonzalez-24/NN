@@ -32,34 +32,48 @@ C_BATCHES = {256: '#CC79A7', 1024: '#E69F00', 8192: '#009E73', 16384: '#0072B2'}
 C_PHASES = {'forward': '#0072B2', 'backward': '#56B4E9', 'update': '#D55E00', 'resto': '#999999'}
 hilos_ticks = [1, 2, 4, 8, 12, 16, 24]
 
-# Buscar los CSV en la carpeta del script, en el CWD o en la carpeta padre
+# Buscar los CSV de benchmarks en la carpeta del script, el CWD o la carpeta padre
 SCRIPT_DIR = Path(__file__).resolve().parent
 search_dirs = [SCRIPT_DIR, Path.cwd(), SCRIPT_DIR.parent]
 
 csv_files = []
 for d in search_dirs:
-    found = sorted(d.glob("resultados_*.csv"))
+    found = [
+        f for f in sorted(d.glob("*.csv"))
+        if re.search(r'batch[_-]?\d+', f.name, re.IGNORECASE)
+    ]
     if found:
         csv_files = found
         break
 
 if not csv_files:
     raise FileNotFoundError(
-        f"No se encontraron archivos 'resultados_*.csv' en: {[str(d) for d in search_dirs]}"
+        f"No se encontraron archivos CSV con 'batch<N>' en: {[str(d) for d in search_dirs]}"
     )
 
 def parse_filename(fname):
+    m_batch = re.search(r'batch[_-]?(\d+)', fname, re.IGNORECASE)
+    if not m_batch:
+        return None
     es_hibrido = bool(re.search(r'hib[rt]ido', fname, re.IGNORECASE))
     estrategia = 'Híbrido (Data-Parallel)' if es_hibrido else 'Solo MKL (MatMul)'
-    batch = int(re.search(r'batch(\d+)', fname).group(1))
-    m_capas = re.search(r'capas2\^(\d+)', fname)
+    batch = int(m_batch.group(1))
+    m_capas = re.search(r'capas[_-]?2\^(\d+)', fname, re.IGNORECASE)
     capas = 2 ** int(m_capas.group(1)) if m_capas else 64
     return estrategia, es_hibrido, batch, capas
 
 records = []
 for f in csv_files:
+    parsed = parse_filename(f.name)
+    if parsed is None:
+        print(f"[Omitido] Nombre sin formato esperado: {f.name}")
+        continue
     df = pd.read_csv(f)
-    estrategia, es_hibrido, batch, capas = parse_filename(f.name)
+    if not {'hilos', 'total'}.issubset(df.columns):
+        print(f"[Omitido] Columnas incompatibles en: {f.name}")
+        continue
+
+    estrategia, es_hibrido, batch, capas = parsed
     t1 = df.loc[df['hilos'] == 1, 'total'].values[0]
     df['estrategia'] = estrategia
     df['es_hibrido'] = es_hibrido
@@ -69,6 +83,10 @@ for f in csv_files:
     df['eficiencia'] = (df['speedup'] / df['hilos']) * 100.0
     df['pct_update'] = (df['update'] / df['total']) * 100.0
     records.append(df)
+    print(f"[OK] Cargado: {f.name} -> {estrategia}, Batch={batch}, Capas={capas}x{capas}")
+
+if not records:
+    raise ValueError("Ningún CSV válido pudo cargarse para graficar.")
 
 all_df = pd.concat(records, ignore_index=True)
 
@@ -232,4 +250,4 @@ plt.tight_layout()
 plt.savefig(SCRIPT_DIR / 'fig4_resumen_optimos.pdf')
 plt.savefig(SCRIPT_DIR / 'fig4_resumen_optimos.png')
 
-print(f"Gráficas guardadas correctamente en: {SCRIPT_DIR}")
+print(f"\nGráficas guardadas correctamente en: {SCRIPT_DIR}")

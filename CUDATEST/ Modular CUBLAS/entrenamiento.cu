@@ -5,6 +5,34 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
+// Set to 0 to disable profiling instrumentation and summary output
+#define ENABLE_PROFILING 1
+
+#if ENABLE_PROFILING
+  #if defined(__has_include)
+    #if __has_include(<nvtx3/nvToolsExt.h>)
+      #include <nvtx3/nvToolsExt.h>
+      #define NVTX_PUSH(name) nvtxRangePushA(name)
+      #define NVTX_POP() nvtxRangePop()
+    #elif __has_include(<nvToolsExt.h>)
+      #include <nvToolsExt.h>
+      #define NVTX_PUSH(name) nvtxRangePushA(name)
+      #define NVTX_POP() nvtxRangePop()
+    #else
+      #define NVTX_PUSH(name) do {} while (0)
+      #define NVTX_POP() do {} while (0)
+    #endif
+  #else
+    #include <nvtx3/nvToolsExt.h>
+    #define NVTX_PUSH(name) nvtxRangePushA(name)
+    #define NVTX_POP() nvtxRangePop()
+  #endif
+#else
+  #define NVTX_PUSH(name) do {} while (0)
+  #define NVTX_POP() do {} while (0)
+#endif
 
 #define CUDA_CHECK(call)                                                       \
   do {                                                                         \
@@ -114,6 +142,11 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
     return -1;
   }
 
+#if ENABLE_PROFILING
+  clock_t t_setup_start = clock();
+  NVTX_PUSH("Setup_and_H2D");
+#endif
+
   // Initialize cuBLAS handle
   cublasHandle_t handle;
   CUBLAS_CHECK(cublasCreate(&handle));
@@ -172,6 +205,19 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
     L->output = (float *)calloc(L->output_size * batch_size, sizeof(float));
   }
 
+#if ENABLE_PROFILING
+  CUDA_CHECK(cudaDeviceSynchronize());
+  NVTX_POP(); // Setup_and_H2D
+  double setup_ms =
+      1000.0 * (double)(clock() - t_setup_start) / CLOCKS_PER_SEC;
+
+  cudaEvent_t ev_train_start, ev_train_stop;
+  CUDA_CHECK(cudaEventCreate(&ev_train_start));
+  CUDA_CHECK(cudaEventCreate(&ev_train_stop));
+  NVTX_PUSH("Training_Loop");
+  CUDA_CHECK(cudaEventRecord(ev_train_start));
+#endif
+
   int num_batches = n_examples / batch_size;
   float neg_lr_over_batch = -(learning_rate / (float)batch_size);
   const float alpha = 1.0f;
@@ -180,11 +226,13 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
 
   // Training Loop
   for (int ep = 0; ep < epochs; ep++) {
+    NVTX_PUSH("Epoch");
     for (int batch = 0; batch < num_batches; batch++) {
       const float *batch_X = d_X + (long long)batch * batch_size * input_dim;
       const float *batch_Y = d_Y + (long long)batch * batch_size * output_dim;
 
       // --- FORWARD PASS ---
+      NVTX_PUSH("Forward");
       for (int l = 0; l < num_layers; l++) {
         int in_sz = neuralnet->layers[l].input_size;
         int out_sz = neuralnet->layers[l].output_size;
@@ -209,8 +257,10 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
         add_bias_and_activate_kernel<<<grid, block2D>>>(
             z_ptr, b_ptr, a_ptr, batch_size, out_sz, act);
       }
+      NVTX_POP(); // Forward
 
       // --- BACKWARD PASS ---
+      NVTX_PUSH("Backward");
       // 1. Last layer delta (output - target)
       int last = num_layers - 1;
       dim3 grid_out((output_dim + 15) / 16, (batch_size + 15) / 16);
@@ -266,16 +316,34 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
               delta_prev, z_prev, batch_size, in_sz, hidden_act_type);
         }
       }
+      NVTX_POP(); // Backward
 
       // --- SGD UPDATE (W -= (lr / B) * dW, b -= (lr / B) * db) ---
+      NVTX_PUSH("SGD_Update");
       CUBLAS_CHECK(cublasSaxpy(handle, (int)total_w, &neg_lr_over_batch,
                                d_grad_w, 1, d_weights, 1));
       CUBLAS_CHECK(cublasSaxpy(handle, (int)total_b, &neg_lr_over_batch,
                                d_grad_b, 1, d_bias, 1));
+      NVTX_POP(); // SGD_Update
     }
+    NVTX_POP(); // Epoch
   }
 
+#if ENABLE_PROFILING
+  CUDA_CHECK(cudaEventRecord(ev_train_stop));
+  CUDA_CHECK(cudaEventSynchronize(ev_train_stop));
+  NVTX_POP(); // Training_Loop
+
+  float train_ms = 0.0f;
+  CUDA_CHECK(cudaEventElapsedTime(&train_ms, ev_train_start, ev_train_stop));
+  CUDA_CHECK(cudaEventDestroy(ev_train_start));
+  CUDA_CHECK(cudaEventDestroy(ev_train_stop));
+
+  clock_t t_cleanup_start = clock();
+  NVTX_PUSH("D2H_and_Cleanup");
+#else
   CUDA_CHECK(cudaDeviceSynchronize());
+#endif
 
   // Copy trained weights and biases back to CPU structs
   for (int l = 0; l < num_layers; l++) {
@@ -302,6 +370,31 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
   cudaFree(d_delta);
   cudaFree(d_ones);
   free(act_offsets);
+
+#if ENABLE_PROFILING
+  NVTX_POP(); // D2H_and_Cleanup
+  double cleanup_ms =
+      1000.0 * (double)(clock() - t_cleanup_start) / CLOCKS_PER_SEC;
+  double total_samples_processed =
+      (double)epochs * (double)(num_batches * batch_size);
+  double throughput = (train_ms > 0.0f)
+                          ? (total_samples_processed / (train_ms / 1000.0))
+                          : 0.0;
+
+  printf("\n=== CUDA Training Profile Summary ===\n");
+  printf("Setup & H2D Transfer : %10.3f ms\n", setup_ms);
+  printf("Pure GPU Training    : %10.3f ms (%d epochs, %d batches/epoch)\n",
+         train_ms, epochs, num_batches);
+  printf("  -> Time per Epoch  : %10.3f ms\n",
+         (epochs > 0) ? (train_ms / epochs) : 0.0);
+  printf("  -> Time per Batch  : %10.4f ms\n",
+         (epochs * num_batches > 0) ? (train_ms / (epochs * num_batches)) : 0.0);
+  printf("  -> Throughput      : %10.0f samples/sec\n", throughput);
+  printf("D2H Copy & Cleanup   : %10.3f ms\n", cleanup_ms);
+  printf("Total End-to-End     : %10.3f ms\n",
+         setup_ms + train_ms + cleanup_ms);
+  printf("=====================================\n\n");
+#endif
 
   return 0;
 }
