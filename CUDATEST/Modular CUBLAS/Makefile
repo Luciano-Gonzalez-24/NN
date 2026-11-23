@@ -1,6 +1,5 @@
 CFLAGS = -Ofast -fopenmp -lm
 NVCCFLAGS = -O3 -lineinfo -arch=native
-LDFLAGS = -L/usr/local/cuda/lib64 -lcudart -lcublas -ldl
 
 CC = gcc
 NVCC = nvcc
@@ -16,7 +15,7 @@ PRED = prediccion
 all: $(EXEC)
 
 $(EXEC): main.o $(EST).o $(TRAIN_CU).o $(PRED).o
-	$(CC) $(CFLAGS) main.o $(EST).o $(TRAIN_CU).o $(PRED).o $(LDFLAGS) -o $(EXEC)
+	$(NVCC) $(NVCCFLAGS) -Xcompiler "-fopenmp" main.o $(EST).o $(TRAIN_CU).o $(PRED).o -lcublas -lm -o $(EXEC)
 
 main.o: main.c $(EST).h $(TRAIN_CU)_cuda.h $(PRED).h
 	$(CC) $(CFLAGS) -c main.c
@@ -33,7 +32,6 @@ $(PRED).o: $(PRED).c $(PRED).h $(EST).h
 run: $(EXEC)
 	./$(EXEC)
 
-# 1. Timeline, NVTX ranges (Forward/Backward/SGD), and cuBLAS vs custom kernel breakdown
 profile-nsys: $(EXEC)
 	nsys profile \
 		--trace=cuda,nvtx,cublas \
@@ -42,12 +40,11 @@ profile-nsys: $(EXEC)
 		-o nn_timeline \
 		./$(EXEC)
 
-# 2. Detailed hardware metrics (memory bandwidth, occupancy) for custom kernels
 profile-ncu: $(EXEC)
 	ncu --set full \
 		--kernel-name-base demangled \
-		--kernel-name regex:"(add_bias_and_activate|output_delta|apply_act_deriv)_kernel" \
-		--launch-count 10 \
+		--kernel-name regex:"(forward_layer|add_bias_and_activate|output_delta|backward_delta|apply_act_deriv|grad_weights|grad_bias|sgd_update)_kernel" \
+		--launch-count 12 \
 		--force-overwrite \
 		-o nn_kernels \
 		./$(EXEC)
