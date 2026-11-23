@@ -1,6 +1,12 @@
 CFLAGS = -Ofast -fopenmp -lm
 NVCCFLAGS = -O3 -lineinfo -arch=native
-LDFLAGS = -L/usr/local/cuda/lib64 -lcudart -lcublas -ldl
+
+# Auto-detect CUDA library directory from nvcc location
+NVCC_BIN := $(shell which nvcc 2>/dev/null)
+CUDA_ROOT := $(patsubst %/bin/nvcc,%,$(NVCC_BIN))
+CUDA_LIB_DIR := $(firstword $(wildcard $(CUDA_ROOT)/lib64 $(CUDA_ROOT)/targets/x86_64-linux/lib /usr/local/cuda/lib64 /usr/lib/x86_64-linux-gnu))
+
+LDFLAGS = $(if $(CUDA_LIB_DIR),-L$(CUDA_LIB_DIR)) -lcudart -lcublas -ldl
 
 CC = gcc
 NVCC = nvcc
