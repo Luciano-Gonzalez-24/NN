@@ -43,6 +43,8 @@
   } while (0)
 
 // Activation types: 0 = Linear (last layer), 1 = ReLU, 2 = Fast Sigmoid
+// IDK if this makes it go slower for the if, might be betteer differente functions.
+
 __device__ inline float activate(float z, int act_type) {
   if (act_type == 1) {
     return (z > 0.0f) ? z : 0.0f;
@@ -51,6 +53,7 @@ __device__ inline float activate(float z, int act_type) {
   }
   return z;
 }
+// IDK if this makes it go slower for the if, might be betteer differente functions.
 
 __device__ inline float activate_deriv(float z, int act_type) {
   if (act_type == 1) {
@@ -233,7 +236,7 @@ static int NN_loop_cuda_internal(NeuralNetwork *neuralnet, int epochs, float *X,
 
 #if ENABLE_PROFILING
   CUDA_CHECK(cudaDeviceSynchronize());
-  NVTX_POP(); // Setup_and_H2D
+  NVTX_POP(); // Setup_and_H2D // 
   double setup_ms =
       1000.0 * (double)(clock() - t_setup_start) / CLOCKS_PER_SEC;
 

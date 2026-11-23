@@ -55,6 +55,7 @@
   } while (0)
 
 // Activation types: 0 = Linear (last layer), 1 = ReLU, 2 = Fast Sigmoid
+// IDK if this makes it go slower for the if, might be betteer differente functions.
 __device__ inline float activate(float z, int act_type) {
   if (act_type == 1) {
     return (z > 0.0f) ? z : 0.0f;
@@ -63,6 +64,7 @@ __device__ inline float activate(float z, int act_type) {
   }
   return z;
 }
+// IDK if this makes it go slower for the if, might be betteer differente functions.
 
 __device__ inline float activate_deriv(float z, int act_type) {
   if (act_type == 1) {
